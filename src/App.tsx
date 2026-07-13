@@ -582,7 +582,118 @@ const NEON_LOCATIONS = [
   }
 ];
 
-function PortalSelector({ onSelect, office, setOffice, theme, toggleTheme }: { onSelect: (id: string) => void; office: string; setOffice: (off: string) => void; theme: "light" | "dark"; toggleTheme: () => void }) {
+function VideoWalkthroughModal({ isOpen, onClose, theme }: { isOpen: boolean; onClose: () => void; theme: "light" | "dark" }) {
+  if (!isOpen) return null;
+  
+  return (
+    <div 
+      onClick={onClose}
+      style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        width: "100vw",
+        height: "100vh",
+        background: "rgba(15, 23, 42, 0.88)",
+        backdropFilter: "blur(8px)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: 99999,
+        padding: "16px",
+        boxSizing: "border-box"
+      }}
+    >
+      <div 
+        onClick={e => e.stopPropagation()}
+        style={{
+          background: theme === "dark" ? "#1E293B" : "#FFFFFF",
+          borderRadius: 16,
+          border: `1.5px solid ${C.coral}`,
+          padding: "24px",
+          width: "100%",
+          maxWidth: "800px",
+          boxShadow: "0 24px 48px -12px rgba(0,0,0,0.5)",
+          animation: "slideup 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)",
+          display: "flex",
+          flexDirection: "column",
+          gap: "16px",
+          boxSizing: "border-box"
+        }}
+      >
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+          <div>
+            <h3 style={{ fontSize: 18, fontWeight: 800, color: theme === "dark" ? "#F8FAFC" : "#181C25", margin: 0, display: "flex", alignItems: "center", gap: 8, fontFamily: F }}>
+              🎬 Apex Platform Walkthrough
+            </h3>
+            <p style={{ fontSize: 13, color: theme === "dark" ? "#94A3B8" : "#64748B", margin: "4px 0 0", fontFamily: F }}>
+              Watch a guided visual walkthrough of the Unified Administration, HR portals & whistleblower system.
+            </p>
+          </div>
+          <button 
+            onClick={onClose}
+            style={{
+              background: "transparent",
+              border: "none",
+              color: theme === "dark" ? "#94A3B8" : "#64748B",
+              fontSize: 20,
+              cursor: "pointer",
+              padding: "4px 8px",
+              borderRadius: "50%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center"
+            }}
+            onMouseEnter={e => { e.currentTarget.style.color = C.coral; }}
+            onMouseLeave={e => { e.currentTarget.style.color = theme === "dark" ? "#94A3B8" : "#64748B"; }}
+          >
+            ✕
+          </button>
+        </div>
+
+        <div style={{ position: "relative", width: "100%", borderRadius: 12, overflow: "hidden", background: "#000", border: `1.5px solid ${theme === "dark" ? "#334155" : "#E4E7ED"}` }}>
+          <video 
+            src="/apex_office_services_walkthrough.mp4" 
+            controls 
+            autoPlay 
+            playsInline 
+            style={{ width: "100%", display: "block", maxHeight: "450px" }}
+          />
+        </div>
+
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12, marginTop: 4 }}>
+          <span style={{ fontSize: 12, color: theme === "dark" ? "#64748B" : "#8E9AA8", fontFamily: F }}>
+            💡 Tip: Click the full-screen button in the video player for the best experience.
+          </span>
+          <a
+            href="/apex_office_services_walkthrough.mp4"
+            download="apex_office_services_walkthrough.mp4"
+            style={{
+              padding: "8px 16px",
+              borderRadius: 8,
+              background: C.coral,
+              color: "#FFFFFF",
+              fontSize: 12,
+              fontWeight: 700,
+              textDecoration: "none",
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              fontFamily: F,
+              transition: "transform 0.15s ease"
+            }}
+            onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.03)"; }}
+            onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; }}
+          >
+            💾 Download Offline Copy
+          </a>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PortalSelector({ onSelect, office, setOffice, theme, toggleTheme, onShowVideo }: { onSelect: (id: string) => void; office: string; setOffice: (off: string) => void; theme: "light" | "dark"; toggleTheme: () => void; onShowVideo: () => void }) {
   const allTickets = Object.values(BASE_TICKETS).flat();
   const activeCount  = allTickets.filter(t => t.status !== "Resolved" && t.status !== "Closed").length;
   const resolvedRate = Math.round(allTickets.filter(t => t.status === "Resolved").length / allTickets.length * 100);
@@ -650,10 +761,9 @@ function PortalSelector({ onSelect, office, setOffice, theme, toggleTheme }: { o
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          {/* Walkthrough Video Download Button */}
-          <a
-            href="/apex_office_services_walkthrough.mp4"
-            download="apex_office_services_walkthrough.mp4"
+          {/* Walkthrough Video Button */}
+          <button
+            onClick={onShowVideo}
             style={{
               padding: "8px 14px",
               borderRadius: 12,
@@ -662,7 +772,6 @@ function PortalSelector({ onSelect, office, setOffice, theme, toggleTheme }: { o
               color: C.coral,
               fontSize: 13,
               fontWeight: 700,
-              textDecoration: "none",
               cursor: "pointer",
               display: "flex",
               alignItems: "center",
@@ -674,8 +783,8 @@ function PortalSelector({ onSelect, office, setOffice, theme, toggleTheme }: { o
             onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.03)"; }}
             onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; }}
           >
-            🎬 Walkthrough Video
-          </a>
+            🎬 Watch Walkthrough
+          </button>
 
           {/* Theme Toggle Button */}
           <button
@@ -1046,7 +1155,7 @@ function PortalSelector({ onSelect, office, setOffice, theme, toggleTheme }: { o
 }
 
 // ─── Top bar ──────────────────────────────────────────────────────────────────
-function TopBar({ portal, office, onBack, view, setView, onPortalChange, theme, toggleTheme }: { portal: string; office: string; onBack: () => void; view: string; setView: (v: string) => void; onPortalChange: (p: string) => void; theme: "light" | "dark"; toggleTheme: () => void }) {
+function TopBar({ portal, office, onBack, view, setView, onPortalChange, theme, toggleTheme, onShowVideo }: { portal: string; office: string; onBack: () => void; view: string; setView: (v: string) => void; onPortalChange: (p: string) => void; theme: "light" | "dark"; toggleTheme: () => void; onShowVideo: () => void }) {
   const navItems = portal === "staff"
     ? [{ id:"requests", label:"My Requests", icon:"📋" }, { id:"new", label:"New Request", icon:"➕" }]
     : [
@@ -1126,10 +1235,9 @@ function TopBar({ portal, office, onBack, view, setView, onPortalChange, theme, 
           >
             {theme === "dark" ? "☀️" : "🌙"}
           </button>
-          {/* Walkthrough Video Download */}
-          <a
-            href="/apex_office_services_walkthrough.mp4"
-            download="apex_office_services_walkthrough.mp4"
+          {/* Walkthrough Video */}
+          <button
+            onClick={onShowVideo}
             style={{
               padding: "5px 8px",
               borderRadius: 6,
@@ -1144,14 +1252,13 @@ function TopBar({ portal, office, onBack, view, setView, onPortalChange, theme, 
               gap: 4,
               fontFamily: F,
               whiteSpace: "nowrap",
-              textDecoration: "none",
               transition: "all 0.2s"
             }}
             onMouseEnter={e => { e.currentTarget.style.borderColor = C.coral; e.currentTarget.style.color = "#fff"; }}
             onMouseLeave={e => { e.currentTarget.style.borderColor = "#2A3042"; e.currentTarget.style.color = C.coral; }}
           >
-            🎬 Walkthrough Video
-          </a>
+            🎬 Watch Walkthrough
+          </button>
           <button onClick={onBack} style={{ padding:"5px 10px", borderRadius:6, border:`1px solid ${C.slateMid}`, background:"transparent", color:"#9AA0B4", fontSize:11, fontWeight: 600, cursor:"pointer", fontFamily:F, whiteSpace:"nowrap" }}>
             ← Portals
           </button>
@@ -2408,6 +2515,7 @@ export default function App() {
   const [openTicket, setOpenTicket] = useState<Ticket | null>(null);
   const [toast, setToast]         = useState<string | null>(null);
   const [ticketStore, setTicketStore] = useState<Record<string, Ticket[]>>(BASE_TICKETS);
+  const [showVideoModal, setShowVideoModal] = useState(false);
 
   // HR & Compliance State
   const [hrTickets, setHrTickets] = useState<HrTicket[]>(() => [
@@ -2554,15 +2662,23 @@ export default function App() {
 
   const toggleTheme = () => setTheme(prev => prev === "light" ? "dark" : "light");
 
-  if (!portal) return <PortalSelector onSelect={p => { setPortal(p); setView(p==="staff"?"requests":"incoming"); }} office={office} setOffice={setOffice} theme={theme} toggleTheme={toggleTheme} />;
+  if (!portal) {
+    return (
+      <>
+        <PortalSelector onSelect={p => { setPortal(p); setView(p==="staff"?"requests":"incoming"); }} office={office} setOffice={setOffice} theme={theme} toggleTheme={toggleTheme} onShowVideo={() => setShowVideoModal(true)} />
+        <VideoWalkthroughModal isOpen={showVideoModal} onClose={() => setShowVideoModal(false)} theme={theme} />
+      </>
+    );
+  }
 
   const isAdmin = portal !== "staff" && portal !== "hr" && portal !== "compliance";
 
   return (
     <div style={{ display:"flex", flexDirection:"column", minHeight:"100vh", background:C.bg, fontFamily:F, transition: "background 0.2s ease-out, color 0.2s ease-out" }}>
       {toast && <Toast msg={toast} onDone={() => setToast(null)} />}
+      <VideoWalkthroughModal isOpen={showVideoModal} onClose={() => setShowVideoModal(false)} theme={theme} />
       <style>{`@keyframes slideup { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }`}</style>
-      <TopBar portal={portal} office={office} onPortalChange={p => { setPortal(p); setView(p === "staff" ? "requests" : "incoming"); }} onBack={() => { setPortal(null); setView("requests"); setSubmitted(false); setOpenTicket(null); }} view={view} setView={v => { setView(v); setSubmitted(false); setOpenTicket(null); }} theme={theme} toggleTheme={toggleTheme} />
+      <TopBar portal={portal} office={office} onPortalChange={p => { setPortal(p); setView(p === "staff" ? "requests" : "incoming"); }} onBack={() => { setPortal(null); setView("requests"); setSubmitted(false); setOpenTicket(null); }} view={view} setView={v => { setView(v); setSubmitted(false); setOpenTicket(null); }} theme={theme} toggleTheme={toggleTheme} onShowVideo={() => setShowVideoModal(true)} />
       <Page>
         {/* HR Portal flow */}
         {portal === "hr" && (
