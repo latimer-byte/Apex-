@@ -649,30 +649,59 @@ function PortalSelector({ onSelect, office, setOffice, theme, toggleTheme }: { o
           <span style={{ fontSize:13, color: theme === "dark" ? "#94A3B8" : "#515A70", fontWeight:500, whiteSpace: "nowrap" }}>Office Services</span>
         </div>
 
-        {/* Theme Toggle Button */}
-        <button
-          onClick={toggleTheme}
-          style={{
-            padding: "8px 14px",
-            borderRadius: 12,
-            border: `1.5px solid ${theme === "dark" ? "#334155" : "#E4E7ED"}`,
-            background: theme === "dark" ? "#1E293B" : "#FFFFFF",
-            color: theme === "dark" ? "#FF444F" : "#181C25",
-            fontSize: 13,
-            fontWeight: 700,
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            gap: 6,
-            boxShadow: theme === "dark" ? "none" : "0 2px 8px rgba(0,0,0,0.05)",
-            fontFamily: F,
-            transition: "all 0.2s"
-          }}
-          onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.03)"; }}
-          onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; }}
-        >
-          {theme === "dark" ? "☀️ Light" : "🌙 Dark"}
-        </button>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          {/* Walkthrough Video Download Button */}
+          <a
+            href="/apex_office_services_walkthrough.mp4"
+            download="apex_office_services_walkthrough.mp4"
+            style={{
+              padding: "8px 14px",
+              borderRadius: 12,
+              border: `1.5px solid ${theme === "dark" ? "#334155" : "#E4E7ED"}`,
+              background: theme === "dark" ? "#1E293B" : "#FFFFFF",
+              color: C.coral,
+              fontSize: 13,
+              fontWeight: 700,
+              textDecoration: "none",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              boxShadow: theme === "dark" ? "none" : "0 2px 8px rgba(0,0,0,0.05)",
+              fontFamily: F,
+              transition: "all 0.2s"
+            }}
+            onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.03)"; }}
+            onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; }}
+          >
+            🎬 Walkthrough Video
+          </a>
+
+          {/* Theme Toggle Button */}
+          <button
+            onClick={toggleTheme}
+            style={{
+              padding: "8px 14px",
+              borderRadius: 12,
+              border: `1.5px solid ${theme === "dark" ? "#334155" : "#E4E7ED"}`,
+              background: theme === "dark" ? "#1E293B" : "#FFFFFF",
+              color: theme === "dark" ? "#FF444F" : "#181C25",
+              fontSize: 13,
+              fontWeight: 700,
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              boxShadow: theme === "dark" ? "none" : "0 2px 8px rgba(0,0,0,0.05)",
+              fontFamily: F,
+              transition: "all 0.2s"
+            }}
+            onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.03)"; }}
+            onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; }}
+          >
+            {theme === "dark" ? "☀️ Light" : "🌙 Dark"}
+          </button>
+        </div>
       </div>
 
       {/* ─── Iconic Global Locations Section (Moved to the Top) ─────────────────── */}
@@ -1097,6 +1126,32 @@ function TopBar({ portal, office, onBack, view, setView, onPortalChange, theme, 
           >
             {theme === "dark" ? "☀️" : "🌙"}
           </button>
+          {/* Walkthrough Video Download */}
+          <a
+            href="/apex_office_services_walkthrough.mp4"
+            download="apex_office_services_walkthrough.mp4"
+            style={{
+              padding: "5px 8px",
+              borderRadius: 6,
+              border: "1.5px solid #2A3042",
+              background: "transparent",
+              color: C.coral,
+              fontSize: 11,
+              fontWeight: 600,
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: 4,
+              fontFamily: F,
+              whiteSpace: "nowrap",
+              textDecoration: "none",
+              transition: "all 0.2s"
+            }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = C.coral; e.currentTarget.style.color = "#fff"; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = "#2A3042"; e.currentTarget.style.color = C.coral; }}
+          >
+            🎬 Walkthrough Video
+          </a>
           <button onClick={onBack} style={{ padding:"5px 10px", borderRadius:6, border:`1px solid ${C.slateMid}`, background:"transparent", color:"#9AA0B4", fontSize:11, fontWeight: 600, cursor:"pointer", fontFamily:F, whiteSpace:"nowrap" }}>
             ← Portals
           </button>
