@@ -695,7 +695,6 @@ function PortalSelector({ onSelect, office, setOffice, theme, toggleTheme }: { o
             <span className="animate-pulse" style={{ width: 8, height: 8, borderRadius: "50%", background: "#FF444F", boxShadow: "0 0 12px #FF444F" }} />
             <span style={{ fontSize: 13, fontWeight: 800, color: theme === "dark" ? "#94A3B8" : "#515A70", letterSpacing: "1px", fontFamily: F }}>OUR GLOBAL LOCATIONS</span>
           </div>
-          <span style={{ fontSize: 11, color: theme === "dark" ? "#64748B" : "#8E9AA8", fontWeight: 600 }}>Click cards or use arrows to navigate (No rows layout)</span>
         </div>
 
         <div style={{
