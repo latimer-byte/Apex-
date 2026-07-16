@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import AdminDashboard from "./components/AdminDashboard";
 import HrPortal, { HrTicket } from "./components/HrPortal";
 import CompliancePortal, { ComplianceReport } from "./components/CompliancePortal";
+import SuggestionBox, { Suggestion, INITIAL_SUGGESTIONS } from "./components/SuggestionBox";
 
 import neonCyprus from "./assets/images/neon_cyprus_1783766539962.jpg";
 import neonMalta from "./assets/images/neon_malta_1783766550652.jpg";
@@ -1021,10 +1022,15 @@ function PortalSelector({ onSelect, office, setOffice, theme, toggleTheme }: { o
 // ─── Top bar ──────────────────────────────────────────────────────────────────
 function TopBar({ portal, office, onBack, view, setView, onPortalChange, theme, toggleTheme }: { portal: string; office: string; onBack: () => void; view: string; setView: (v: string) => void; onPortalChange: (p: string) => void; theme: "light" | "dark"; toggleTheme: () => void }) {
   const navItems = portal === "staff"
-    ? [{ id:"requests", label:"My Requests", icon:"📋" }, { id:"new", label:"New Request", icon:"➕" }]
+    ? [
+        { id:"requests", label:"My Requests", icon:"📋" },
+        { id:"new", label:"New Request", icon:"➕" },
+        { id:"suggestions", label:"Suggestion Box", icon:"💡" }
+      ]
     : [
         { id:"incoming", label:"Incoming Requests", icon:"📥" },
         { id:"resolved", label:"Resolved", icon:"✅" },
+        { id:"suggestions", label:"Suggestions", icon:"💡" },
         { id:"dashboard", label:"Dashboard", icon:"📊" }
       ];
   return (
@@ -2356,6 +2362,23 @@ export default function App() {
   const [toast, setToast]         = useState<string | null>(null);
   const [ticketStore, setTicketStore] = useState<Record<string, Ticket[]>>(BASE_TICKETS);
 
+  // Suggestions state
+  const [suggestions, setSuggestions] = useState<Suggestion[]>(() => {
+    try {
+      const stored = localStorage.getItem("apex_suggestions");
+      return stored ? JSON.parse(stored) : INITIAL_SUGGESTIONS;
+    } catch {
+      return INITIAL_SUGGESTIONS;
+    }
+  });
+
+  // Keep suggestions in sync with localStorage
+  React.useEffect(() => {
+    try {
+      localStorage.setItem("apex_suggestions", JSON.stringify(suggestions));
+    } catch (e) {}
+  }, [suggestions]);
+
 
   // HR & Compliance State
   const [hrTickets, setHrTickets] = useState<HrTicket[]>(() => [
@@ -2456,6 +2479,46 @@ export default function App() {
 
   const handleUpdateComplianceReport = (updated: ComplianceReport) => {
     setComplianceReports(prev => prev.map(r => r.id === updated.id ? updated : r));
+  };
+
+  const handleAddSuggestion = (newSug: Suggestion) => {
+    setSuggestions(prev => [newSug, ...prev]);
+    setToast(`💡 Suggestion "${newSug.title}" published!`);
+  };
+
+  const handleLikeSuggestion = (id: string) => {
+    setSuggestions(prev => prev.map(s => {
+      if (s.id === id) {
+        try {
+          const likedListStr = sessionStorage.getItem("liked_suggestions_list");
+          const likedList: string[] = likedListStr ? JSON.parse(likedListStr) : [];
+          const isLikedNow = likedList.includes(id);
+          return {
+            ...s,
+            likes: isLikedNow ? s.likes + 1 : Math.max(0, s.likes - 1)
+          };
+        } catch {
+          return { ...s, likes: s.likes + 1 };
+        }
+      }
+      return s;
+    }));
+  };
+
+  const handleUpdateSuggestionStatus = (id: string, status: Suggestion["status"], response: string, adminBy: string) => {
+    setSuggestions(prev => prev.map(s => {
+      if (s.id === id) {
+        return {
+          ...s,
+          status,
+          adminResponse: response,
+          adminResponseDate: new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }),
+          adminResponseBy: adminBy
+        };
+      }
+      return s;
+    }));
+    setToast(`✍️ Decision updated for suggestion ${id}`);
   };
 
   // Preload all location images instantly
@@ -2564,6 +2627,26 @@ export default function App() {
           />
         )}
         {isAdmin && activeTicket && <TicketDetail ticket={activeTicket} onBack={() => setOpenTicket(null)} onUpdate={handleUpdate} isAdmin={true} />}
+
+        {/* Suggestion Box Flow (Staff & Admin) */}
+        {view === "suggestions" && (
+          <SuggestionBox
+            office={office}
+            theme={theme}
+            suggestions={suggestions}
+            onAddSuggestion={handleAddSuggestion}
+            onLikeSuggestion={handleLikeSuggestion}
+            onUpdateSuggestionStatus={handleUpdateSuggestionStatus}
+            isAdmin={isAdmin}
+            adminName={
+              portal === "it" 
+                ? "IT Administrator" 
+                : portal === "facilities" 
+                  ? "Facilities Team Lead" 
+                  : "Office Operations Specialist"
+            }
+          />
+        )}
       </Page>
     </div>
   );
