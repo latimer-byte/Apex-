@@ -48,6 +48,7 @@ export interface Ticket {
   technician: string;
   thread: ThreadEntry[];
   attachments?: { name: string; size: string; type: string; url?: string }[];
+  reopened?: boolean;
 }
 
 // ─── Brand Tokens ─────────────────────────────────────────────────────────────
@@ -1175,6 +1176,7 @@ function TicketDetail({ ticket, onBack, onUpdate, isAdmin }: { ticket: Ticket; o
   const [isInternal, setIsInternal] = useState(false);
   const [technicianSel, setTechSel] = useState(ticket.technician);
   const [assignNote, setAssignNote] = useState("");
+  const [reopenReason, setReopenReason] = useState("");
 
   const deptsList = ["IT Admin", "Facilities Management", "Office Admin"];
   const initialRedirectDept = deptsList.find(d => d !== ticket.dept) || "IT Admin";
@@ -1185,6 +1187,7 @@ function TicketDetail({ ticket, onBack, onUpdate, isAdmin }: { ticket: Ticket; o
     const defaultDept = ["IT Admin", "Facilities Management", "Office Admin"].find(d => d !== ticket.dept) || "IT Admin";
     setRedirectDept(defaultDept);
     setRedirectReason("");
+    setReopenReason("");
     setTechSel(ticket.technician);
   }, [ticket.id, ticket.dept, ticket.technician]);
 
@@ -1199,7 +1202,13 @@ function TicketDetail({ ticket, onBack, onUpdate, isAdmin }: { ticket: Ticket; o
   function advanceStatus() {
     const next = STATUS_FLOW[currentIdx + 1];
     const entry: ThreadEntry = { type:"status", from:ticket.status, to:next, by:isAdmin ? (ticket.technician !== "Unassigned" ? ticket.technician : "Admin") : "Staff", time:new Date().toLocaleString("en-GB",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}), note:`Status advanced to ${next}.` };
-    onUpdate({ ...ticket, status:next, thread:[...ticket.thread, entry] });
+    const shouldClearReopened = next === "Resolved" || next === "Closed";
+    onUpdate({ 
+      ...ticket, 
+      status:next, 
+      reopened: shouldClearReopened ? false : ticket.reopened, 
+      thread:[...ticket.thread, entry] 
+    });
   }
 
   function revertStatus() {
@@ -1258,9 +1267,14 @@ function TicketDetail({ ticket, onBack, onUpdate, isAdmin }: { ticket: Ticket; o
         <div style={{ flex:1, minWidth:"min(320px, 100%)", display:"flex", flexDirection:"column", gap:20 }}>
           {/* Header card */}
           <div style={{ background:C.card, borderRadius:16, border:`1.5px solid ${C.border}`, padding:"24px 28px" }}>
-            <div style={{ display:"flex", gap:10, flexWrap:"wrap", marginBottom:12 }}>
+            <div style={{ display:"flex", gap:10, flexWrap:"wrap", marginBottom:12, alignItems: "center" }}>
               <PriBadge p={ticket.priority} />
               <StaBadge s={ticket.status} />
+              {ticket.reopened && (
+                <span style={{ fontSize: 11, background: "#FEF2F2", color: C.coral, border: `1px solid ${C.coralMid}`, padding: "2px 8px", borderRadius: 12, fontWeight: 700 }}>
+                  ⚠️ Reopened by Staff
+                </span>
+              )}
               <span style={{ fontSize:12, color:C.textMuted, display:"flex", alignItems:"center" }}>{ticket.id} · {ticket.date}</span>
             </div>
             <h2 style={{ fontSize:22, fontWeight:800, color:C.slate, margin:"0 0 10px", lineHeight:1.3 }}>{ticket.title}</h2>
@@ -1328,39 +1342,96 @@ function TicketDetail({ ticket, onBack, onUpdate, isAdmin }: { ticket: Ticket; o
 
           {/* Bidirectional Feedback Message Hub */}
           {!isAdmin ? (
-            <div style={{ background:C.card, borderRadius:16, border:`1.5px dashed ${C.coralMid}`, padding:"22px 28px" }}>
-              <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:12 }}>
-                <span style={{ fontSize:18 }}>💬</span>
-                <span style={{ fontSize:14, fontWeight:700, color:C.slate }}>Message support team / Revert with update</span>
+            ticket.status === "Resolved" || ticket.status === "Closed" ? (
+              <div style={{ background: currentTheme === "dark" ? "rgba(255, 68, 79, 0.05)" : "#FFF5F5", borderRadius:16, border:`1.5px solid ${C.coral}`, padding:"22px 28px" }}>
+                <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:10 }}>
+                  <span style={{ fontSize:20 }}>⚠️</span>
+                  <span style={{ fontSize:15, fontWeight:800, color:C.slate }}>Support Satisfaction Check</span>
+                </div>
+                <p style={{ fontSize:13, color:C.textSub, margin:"0 0 16px", lineHeight:1.5 }}>
+                  This request has been marked as <strong>{ticket.status}</strong>. If you are not satisfied with the resolution or the issue still persists, you can reopen it below. The assigned support team will be notified instantly.
+                </p>
+                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                  <textarea 
+                    value={reopenReason} 
+                    onChange={e => setReopenReason(e.target.value)}
+                    placeholder="Describe what was missing or why you want to reopen this ticket..."
+                    style={{ ...inp, minHeight:75, resize:"vertical", lineHeight:1.5, borderColor: C.coralMid }} 
+                  />
+                  <div>
+                    <button 
+                      onClick={() => {
+                        const reason = reopenReason.trim() ? reopenReason.trim() : "Staff reopened the ticket because they were not satisfied with the resolution.";
+                        const statusEntry: ThreadEntry = { 
+                          type: "status", 
+                          from: ticket.status, 
+                          to: "In Progress", 
+                          by: ticket.staffName, 
+                          time: new Date().toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }), 
+                          note: `Issue Reopened. Reason: ${reason}` 
+                        };
+                        
+                        onUpdate({ 
+                          ...ticket, 
+                          status: "In Progress", 
+                          reopened: true,
+                          thread: [...ticket.thread, statusEntry] 
+                        });
+                        setReopenReason("");
+                      }} 
+                      style={{ 
+                        padding:"10px 22px", 
+                        borderRadius:10, 
+                        border:"none", 
+                        background:C.coral, 
+                        color:"#fff", 
+                        fontWeight:700, 
+                        cursor:"pointer", 
+                        fontSize:13, 
+                        fontFamily:F,
+                        boxShadow: "0 4px 12px rgba(255, 68, 79, 0.15)"
+                      }}
+                    >
+                      🔓 Reopen Issue & Resume Support
+                    </button>
+                  </div>
+                </div>
               </div>
-              <p style={{ fontSize:13, color:C.textSub, margin:"0 0 12px", lineHeight:1.5 }}>
-                Do you have additional information to provide, or want to ask the team for an update? Write a reply below.
-              </p>
-              <textarea 
-                value={newNote} 
-                onChange={e => setNewNote(e.target.value)}
-                placeholder="Type your reply to the support team here..."
-                style={{ ...inp, minHeight:70, resize:"vertical", lineHeight:1.5, marginBottom:12 }} 
-              />
-              <button 
-                onClick={() => {
-                  if (!newNote.trim()) return;
-                  const entry: ThreadEntry = { 
-                    type: "comment", 
-                    by: ticket.staffName, 
-                    time: new Date().toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }), 
-                    note: newNote.trim(), 
-                    internal: false 
-                  };
-                  onUpdate({ ...ticket, thread: [...ticket.thread, entry] });
-                  setNewNote("");
-                }} 
-                disabled={!newNote.trim()}
-                style={{ padding:"10px 22px", borderRadius:10, border:"none", background:newNote.trim() ? C.slate : C.border, color:newNote.trim() ? (currentTheme === "dark" ? "#0F172A" : "#fff") : C.textMuted, fontWeight:700, cursor:newNote.trim() ? "pointer" : "not-allowed", fontSize:13, fontFamily:F }}
-              >
-                Send reply to team
-              </button>
-            </div>
+            ) : (
+              <div style={{ background:C.card, borderRadius:16, border:`1.5px dashed ${C.coralMid}`, padding:"22px 28px" }}>
+                <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:12 }}>
+                  <span style={{ fontSize:18 }}>💬</span>
+                  <span style={{ fontSize:14, fontWeight:700, color:C.slate }}>Message support team / Revert with update</span>
+                </div>
+                <p style={{ fontSize:13, color:C.textSub, margin:"0 0 12px", lineHeight:1.5 }}>
+                  Do you have additional information to provide, or want to ask the team for an update? Write a reply below.
+                </p>
+                <textarea 
+                  value={newNote} 
+                  onChange={e => setNewNote(e.target.value)}
+                  placeholder="Type your reply to the support team here..."
+                  style={{ ...inp, minHeight:70, resize:"vertical", lineHeight:1.5, marginBottom:12 }} 
+                />
+                <button 
+                  onClick={() => {
+                    if (!newNote.trim()) return;
+                    const entry: ThreadEntry = { 
+                      type: "comment", 
+                      by: ticket.staffName, 
+                      time: new Date().toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }), 
+                      note: newNote.trim(), 
+                      internal: false 
+                    };
+                    onUpdate({ ...ticket, thread: [...ticket.thread, entry] });
+                    setNewNote("");
+                  }} 
+                  disabled={!newNote.trim()}
+                  style={{ padding:"10px 22px", borderRadius:10, border:"none", background:newNote.trim() ? C.slate : C.border, color:newNote.trim() ? (currentTheme === "dark" ? "#0F172A" : "#fff") : C.textMuted, fontWeight:700, cursor:newNote.trim() ? "pointer" : "not-allowed", fontSize:13, fontFamily:F }}
+                >
+                  Send reply to team
+                </button>
+              </div>
+            )
           ) : null}
 
           {/* Activity thread */}
@@ -1820,6 +1891,11 @@ function RequestHistory({ tickets, office, onOpenTicket }: { tickets: Ticket[]; 
                   <PriBadge p={t.priority} />
                 </div>
                 <div className="flex items-center gap-3">
+                  {t.reopened && (
+                    <span style={{ fontSize: 11, background: "#FEF2F2", color: C.coral, border: `1px solid ${C.coralMid}`, padding: "3px 8px", borderRadius: 12, fontWeight: 700, display: "inline-flex", alignItems: "center", gap: 4 }}>
+                      ⚠️ Reopened
+                    </span>
+                  )}
                   <StaBadge s={t.status} />
                   <span style={{ fontSize:13, color:C.textMuted }}>{t.date}</span>
                 </div>
@@ -2333,7 +2409,16 @@ function IncomingRequests({ tickets, deptFilter, title, office, onOpenTicket }: 
                   </td>
                   <td title={t.location} style={{ padding:"16px 20px", color:C.textSub, fontSize:13, whiteSpace:"nowrap" }}>{t.location.length>22?t.location.slice(0,22)+"…":t.location}</td>
                   <td style={{ padding:"16px 20px" }}><PriBadge p={t.priority} /></td>
-                  <td style={{ padding:"16px 20px" }}><StaBadge s={t.status} /></td>
+                  <td style={{ padding:"16px 20px" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      <StaBadge s={t.status} />
+                      {t.reopened && (
+                        <span style={{ fontSize: 10, background: "#FEF2F2", color: C.coral, border: `1px solid ${C.coralMid}`, padding: "2px 6px", borderRadius: 8, fontWeight: 700 }}>
+                          Reopened
+                        </span>
+                      )}
+                    </div>
+                  </td>
                   <td style={{ padding:"16px 20px", fontSize:12, color:t.technician==="Unassigned"?C.textMuted:C.slate, fontWeight:t.technician==="Unassigned"?400:600 }}>{t.technician}</td>
                   <td style={{ padding:"16px 20px", color:C.textMuted, fontSize:12, whiteSpace:"nowrap" }}>{t.date.replace(" 2024","")}</td>
                   <td style={{ padding:"16px 20px", textAlign:"right" }}><span style={{ color:C.coral, fontSize:16 }}>→</span></td>
